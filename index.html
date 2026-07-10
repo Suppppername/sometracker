@@ -101,6 +101,10 @@
     </button>
   </div>
 
+  <div style="margin-bottom:12px;">
+    <input id="searchInput" placeholder="搜索手牌，如 AA、AK、QQ" style="width:100%;" oninput="updateSearch()">
+  </div>
+
   <div class="sort-row" id="sortRow">
     <button class="sort-btn active" data-sort="profit" onclick="setSort('profit')">按盈亏</button>
     <button class="sort-btn" data-sort="name" onclick="setSort('name')">按名称</button>
@@ -479,6 +483,7 @@ async function saveHands(hands) {
 let hands = null;
 let selected = null;
 let sortMode = "profit";
+let searchTerm = "";
 
 const fmt = (n) => { const r = Math.round(n); return (r >= 0 ? "+" : "") + r.toLocaleString("zh-CN"); };
 const total = (h) => h.entries.reduce((s, e) => s + e.amount, 0);
@@ -500,8 +505,20 @@ function getSortedList() {
   return arr;
 }
 
+function getFilteredList() {
+  const sorted = getSortedList();
+  if (!searchTerm.trim()) return sorted;
+  const term = searchTerm.trim().toLowerCase();
+  return sorted.filter(h => h.name.toLowerCase().includes(term));
+}
+
+function updateSearch() {
+  searchTerm = document.getElementById("searchInput").value;
+  render();
+}
+
 function render() {
-  const list = getSortedList();
+  const list = getFilteredList();
   const grand = Object.values(hands).reduce((s, h) => s + total(h), 0);
   const totalHands = Object.values(hands).reduce((s, h) => s + h.entries.length, 0);
 
@@ -512,6 +529,12 @@ function render() {
 
   const grid = document.getElementById("handGrid");
   grid.innerHTML = "";
+  
+  if (list.length === 0 && searchTerm.trim()) {
+    grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:30px 0; color:var(--cream-dim); font-size:13px;">未找到匹配的手牌</div>`;
+    return;
+  }
+  
   list.forEach((h, i) => {
     const t = total(h);
     const positive = t >= 0;
