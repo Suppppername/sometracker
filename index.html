@@ -417,7 +417,7 @@ function parseChain(raw) {
   const unsignedDashMatch = firstChunk.match(/^(\d+(?:\.\d+)?)-([\d.]+)$/);
   const nextChunkHasSigned = parts.length > 1 && parts[1].match(/^[+-]/);
   
-  // 只在这两个条件都满足时才跳过
+  // 只在这两个条件都满足时才跳过（如 1320-605= 后面跟 +715）
   if (unsignedDashMatch && nextChunkHasSigned) {
     firstChunk = "";
   } else {
