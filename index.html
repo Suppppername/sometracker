@@ -412,21 +412,26 @@ function parseChain(raw) {
   const out = [];
   const signedRe = /[+-]\d+(?:\.\d+)?/g;
   
-  // first chunk: check for unsigned number at start, then signed ones
+  // 特殊处理：如果第一部分是 "数字-数字..." 的格式（如 1320-605），跳过它
   let firstChunk = parts[0];
-  const unsignedMatch = firstChunk.match(/^\d+(?:\.\d+)?/);
-  if (unsignedMatch) {
-    out.push(Number(unsignedMatch[0]));
-    firstChunk = firstChunk.slice(unsignedMatch[0].length);
+  const specialMatch = firstChunk.match(/^\d+(?:\.\d+)?-/);
+  if (specialMatch) {
+    // 这看起来像特殊格式（如1320-605=），跳过直到第一个有符号增量
+    firstChunk = "";
   }
+  
+  // 从第一个块提取所有带符号的增量
   const firstSigned = firstChunk.match(signedRe) || [];
   out.push(...firstSigned.map(Number));
   
+  // 处理剩余块（跳过运行总计，提取增量）
   for (let i = 1; i < parts.length; i++) {
     let chunk = parts[i];
     if (!chunk) continue;
+    // 跳过开头的运行总计数字
     const totalMatch = chunk.match(/^-?\d+(?:\.\d+)?/);
     if (totalMatch) chunk = chunk.slice(totalMatch[0].length);
+    // 提取带符号的增量
     const incs = chunk.match(signedRe) || [];
     out.push(...incs.map(Number));
   }
