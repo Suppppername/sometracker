@@ -412,26 +412,32 @@ function parseChain(raw) {
   const out = [];
   const signedRe = /[+-]\d+(?:\.\d+)?/g;
   
-  // 特殊处理：如果第一部分是 "数字-数字..." 的格式（如 1320-605），跳过它
+  // 检查第一块是否是"无符号-无符号"格式，且后面紧跟带符号数字
   let firstChunk = parts[0];
-  const specialMatch = firstChunk.match(/^\d+(?:\.\d+)?-/);
-  if (specialMatch) {
-    // 这看起来像特殊格式（如1320-605=），跳过直到第一个有符号增量
+  const unsignedDashMatch = firstChunk.match(/^(\d+(?:\.\d+)?)-([\d.]+)$/);
+  const nextChunkHasSigned = parts.length > 1 && parts[1].match(/^[+-]/);
+  
+  // 只在这两个条件都满足时才跳过
+  if (unsignedDashMatch && nextChunkHasSigned) {
     firstChunk = "";
+  } else {
+    // 否则正常处理：提取无符号开头和所有有符号数字
+    const unsignedMatch = firstChunk.match(/^\d+(?:\.\d+)?/);
+    if (unsignedMatch) {
+      out.push(Number(unsignedMatch[0]));
+      firstChunk = firstChunk.slice(unsignedMatch[0].length);
+    }
   }
   
-  // 从第一个块提取所有带符号的增量
   const firstSigned = firstChunk.match(signedRe) || [];
   out.push(...firstSigned.map(Number));
   
-  // 处理剩余块（跳过运行总计，提取增量）
+  // 后续块：跳过开头的运行总计，提取有符号增量
   for (let i = 1; i < parts.length; i++) {
     let chunk = parts[i];
     if (!chunk) continue;
-    // 跳过开头的运行总计数字
     const totalMatch = chunk.match(/^-?\d+(?:\.\d+)?/);
     if (totalMatch) chunk = chunk.slice(totalMatch[0].length);
-    // 提取带符号的增量
     const incs = chunk.match(signedRe) || [];
     out.push(...incs.map(Number));
   }
