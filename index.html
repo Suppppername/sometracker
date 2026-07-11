@@ -411,8 +411,17 @@ function parseChain(raw) {
   const parts = s.split("=");
   const out = [];
   const signedRe = /[+-]\d+(?:\.\d+)?/g;
-  const firstSigned = parts[0].match(signedRe) || [];
+  
+  // first chunk: check for unsigned number at start, then signed ones
+  let firstChunk = parts[0];
+  const unsignedMatch = firstChunk.match(/^\d+(?:\.\d+)?/);
+  if (unsignedMatch) {
+    out.push(Number(unsignedMatch[0]));
+    firstChunk = firstChunk.slice(unsignedMatch[0].length);
+  }
+  const firstSigned = firstChunk.match(signedRe) || [];
   out.push(...firstSigned.map(Number));
+  
   for (let i = 1; i < parts.length; i++) {
     let chunk = parts[i];
     if (!chunk) continue;
