@@ -424,7 +424,7 @@ function parseChain(raw) {
   return out;
 }
 
-const HAND_TOKEN = /^([2-9TJQKA]{2}(?:[so])?)/;
+const HAND_TOKEN = /^([2-9TJQKA]{2}(?:[so])?)\s*(?=[+\-]|\d*[+\-])/;
 const SKIP_HEADERS = ["AX系列", "小KX", "QX", "JX", "结构牌"];
 
 function splitIntoHands(rawText) {
@@ -446,7 +446,12 @@ function splitIntoHands(rawText) {
       continue;
     }
     const m = line.match(HAND_TOKEN);
-    if (m) { current = m[1]; ensure(current).push(line.slice(m[0].length)); continue; }
+    if (m) { 
+      current = m[1]; 
+      const rest = line.slice(m[0].length).trim();
+      ensure(current).push(rest); 
+      continue; 
+    }
     if (current) ensure(current).push(line);
   }
   const result = {};
