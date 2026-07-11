@@ -39,7 +39,7 @@
   .tile:active{transform:scale(0.96);}
   .tile-top{display:flex; align-items:center; justify-content:space-between;}
   .tile-rank{font-size:10px; opacity:.5; color:var(--cream-dim); font-family:'IBM Plex Mono',monospace; margin-right:6px;}
-  .tile-name{font-weight:600; letter-spacing:.02em;}
+  .tile-name{font-weight:600; letter-spacing:.02em; color:var(--gold);}
   .tile-total{font-size:19px; margin-top:4px; font-family:'IBM Plex Mono',monospace;}
   .tile-count{font-size:10px; color:var(--cream-dim); margin-top:2px;}
   .footer-actions{margin-top:32px; display:flex; justify-content:center;}
@@ -424,7 +424,7 @@ function parseChain(raw) {
   return out;
 }
 
-const HAND_TOKEN = /^([2-9TJQKA]{2}(?:[so])?)\s*(?=[+\-]|\d*[+\-])/;
+const HAND_TOKEN = /^([2-9TJQKA]{2}(?:[so])?)\s*(?=[+\-])/;
 const SKIP_HEADERS = ["AX系列", "小KX", "QX", "JX", "结构牌"];
 
 function splitIntoHands(rawText) {
@@ -436,6 +436,19 @@ function splitIntoHands(rawText) {
     if (!hands[name]) { hands[name] = []; order.push(name); }
     return hands[name];
   };
+  
+  // Valid standalone hand labels (complete names without following data)
+  const VALID_HANDS = new Set([
+    "22","33","44","55","66","77","88","99","TT","JJ","QQ","KK","AA",
+    "A2s","A3s","A4","A5s","A6s","A6o","A7s","A8s","A8o","A9s","A9o",
+    "AKo","AKs","AQo","AQs","AJo","AJ","ATo","ATs",
+    "K9s","K9o","K8s","K7s","KQo","KQs","KJs","KJo","KTo","KTs",
+    "Q8s","QTo","QTs","Q9s","Q9o",
+    "JQs","J7s","J8s","J8o","J5o","9Js","9Jo","TJo","TJs",
+    "9Ts","9To","8Ts","7Ts","T6s",
+    "89s","89o","79s","69s","59s","78s","78o","86s","67s","67o","57s","58s","58o","48s","47s","47o","37s","56s","46s","46o","45s","45o","36s","36o","26s","34s","24s","35s"
+  ]);
+  
   for (let line of lines) {
     if (!line) continue;
     if (/^-{2,}$/.test(line)) { current = null; continue; }
@@ -445,6 +458,15 @@ function splitIntoHands(rawText) {
       ensure(current).push(line.replace(/^Bomb\s*pot[一共]*/i, ""));
       continue;
     }
+    
+    // Check for standalone hand label (complete line with just a valid hand name)
+    if (VALID_HANDS.has(line)) {
+      current = line;
+      ensure(current);
+      continue;
+    }
+    
+    // Check for hand label with immediate data
     const m = line.match(HAND_TOKEN);
     if (m) { 
       current = m[1]; 
@@ -452,6 +474,7 @@ function splitIntoHands(rawText) {
       ensure(current).push(rest); 
       continue; 
     }
+    
     if (current) ensure(current).push(line);
   }
   const result = {};
